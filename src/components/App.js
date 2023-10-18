@@ -64,15 +64,17 @@ export default function App() {
         currSpeaker?.id === selectedSpeaker?.id
           ? {
               ...currSpeaker,
+              description: speachData.description
+                ? speachData.description
+                : currSpeaker.description,
               from: speachData.from,
               to: speachData.to,
-              description: speachData.description
-                ? String(speachData.description)
-                : String(currSpeaker.description),
             }
           : currSpeaker
       )
     );
+
+    setSelectedSpeaker(null);
   }
 
   return (

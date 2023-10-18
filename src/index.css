@@ -146,14 +146,14 @@ body {
 }
 .sidebar li div {
   grid-row: span 4;
-  grid-column: 2;
+  grid-column: span 4;
   max-height: 0;
   /* overflow: hidden; */
   transition: max-height 0.3s;
 }
 
 .sidebar li.open div {
-  max-width: 500px;
+  max-width: 600px;
   max-height: 1000px; /* Adjust the value based on your content's height */
   transition: max-height 0.3s;
   word-wrap: break-word;
