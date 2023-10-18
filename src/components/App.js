@@ -1,6 +1,5 @@
 import { useState } from "react";
 import "./App.css";
-import { isVisible } from "@testing-library/user-event/dist/utils";
 
 const initialSpeakers = [
   {
@@ -36,30 +35,52 @@ const initialSpeakers = [
 ];
 
 export default function App() {
+  const [addSpeakerVisible, setAddSpeakerVisible] = useState(false);
+  const [speakerList, setSpeakerList] = useState(initialSpeakers);
+  const [selectedSpeaker, setSelectedSpeaker] = useState(null);
+
+  function handleAddSpeakerButton() {
+    setAddSpeakerVisible((isVisible) => !isVisible);
+  }
+
+  function handleFormAddSpeaker(speaker) {
+    setSpeakerList((speakerArr) => [...speakerArr, speaker]);
+  }
+
+  function handleSelectButton(speaker) {
+    setSelectedSpeaker((currSpeaker) =>
+      currSpeaker?.id !== speaker.id ? speaker : null
+    );
+  }
+
   return (
     <>
       <Header />
       <div className="app">
         <div className="sidebar">
-          <SpeakersList />
+          <SpeakersList
+            listOfSpeakers={speakerList}
+            onSelectClicked={handleSelectButton}
+            selectedSpeaker={selectedSpeaker}
+          />
 
-          <AddSpeakerForm />
+          {addSpeakerVisible && (
+            <AddSpeakerForm onSpeakerAdd={handleFormAddSpeaker} />
+          )}
 
-          <Button>Add Speaker</Button>
+          <Button onClick={handleAddSpeakerButton}>
+            {addSpeakerVisible ? "Close" : "Add Speaker"}
+          </Button>
         </div>
-        <DefineSpeakerHours />
+        {selectedSpeaker && <DefineSpeakerHours />}
       </div>
     </>
   );
 }
 
-function Button({ children }) {
-  function handleClick() {
-    console.log("shavit");
-  }
-
+function Button({ onClick, children }) {
   return (
-    <button className="button" onClick={handleClick}>
+    <button className="button" onClick={onClick}>
       {children}
     </button>
   );
@@ -73,20 +94,26 @@ function Header() {
   );
 }
 
-function SpeakersList() {
-  const speakersList = initialSpeakers;
+function SpeakersList({ listOfSpeakers, onSelectClicked, selectedSpeaker }) {
+  const speakersList = listOfSpeakers;
 
   return (
     <ul>
       {speakersList.map((speaker) => (
-        <Speaker speaker={speaker} />
+        <Speaker
+          speaker={speaker}
+          onSelectClicked={onSelectClicked}
+          selectedSpeaker={selectedSpeaker}
+          key={speaker.id}
+        />
       ))}
     </ul>
   );
 }
 
-function Speaker({ speaker }) {
+function Speaker({ speaker, onSelectClicked, selectedSpeaker }) {
   const [visibleDiscription, setVisibleDescription] = useState(false);
+  const isSameSpeaker = selectedSpeaker?.id === speaker.id;
 
   function handleListElementClick(e) {
     if (e.target.tagName !== "BUTTON") {
@@ -105,20 +132,63 @@ function Speaker({ speaker }) {
         {speaker.topic} {visibleDiscription ? "⬆️" : "⬇️"}
       </p>
       <span>{speaker.from ? `${speaker.from}:00 - ${speaker.to}:00` : ""}</span>
-      <Button>Select</Button>
+      <Button onClick={() => onSelectClicked(speaker)}>
+        {isSameSpeaker ? "Close" : "Select"}
+      </Button>
       {visibleDiscription && <div>{speaker.description}</div>}
     </li>
   );
 }
 
-function AddSpeakerForm() {
-  return (
-    <form className="form-add-speaker">
-      <label>🗣️ Speaker Name </label>
-      <input type="text"></input>
+function AddSpeakerForm({ onSpeakerAdd }) {
+  const [name, setName] = useState("");
+  const [image, setImage] = useState("https://i.pravatar.cc/48");
+  const [topic, setTopic] = useState("");
 
-      <label>📷 image url</label>
-      <input type="text"></input>
+  function handleSubmit(e) {
+    e.preventDefault();
+
+    if (!name || !image || !topic) return;
+
+    const id = crypto.randomUUID();
+
+    const newSpeaker = {
+      id,
+      name,
+      image: `${image}?=${id}`,
+      topic,
+      description: "",
+      from: null,
+      to: null,
+    };
+
+    onSpeakerAdd(newSpeaker);
+  }
+
+  return (
+    <form className="form-add-speaker" onSubmit={(e) => handleSubmit(e)}>
+      <label>🗣️ Speaker Name </label>
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      ></input>
+
+      <label>📷 Image url</label>
+      <input
+        type="text"
+        value={image}
+        onChange={(e) => setImage(e.target.value)}
+      ></input>
+
+      <label>🔝 Topic</label>
+      <input
+        type="text"
+        value={topic}
+        onChange={(e) => setTopic(e.target.value)}
+      ></input>
+
+      <Button>Add</Button>
     </form>
   );
 }
