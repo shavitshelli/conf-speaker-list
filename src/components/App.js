@@ -38,18 +38,40 @@ export default function App() {
   const [addSpeakerVisible, setAddSpeakerVisible] = useState(false);
   const [speakerList, setSpeakerList] = useState(initialSpeakers);
   const [selectedSpeaker, setSelectedSpeaker] = useState(null);
+  const [selectedDescriptionSpeaker, setSelectedDescriptionSpeaker] =
+    useState(null);
 
   function handleAddSpeakerButton() {
     setAddSpeakerVisible((isVisible) => !isVisible);
   }
 
   function handleFormAddSpeaker(speaker) {
+    setAddSpeakerVisible(false);
     setSpeakerList((speakerArr) => [...speakerArr, speaker]);
   }
 
   function handleSelectButton(speaker) {
+    setAddSpeakerVisible(false);
     setSelectedSpeaker((currSpeaker) =>
       currSpeaker?.id !== speaker.id ? speaker : null
+    );
+  }
+
+  function handleFormSpeachData(speachData) {
+    console.log(speachData.description);
+    setSpeakerList((currSpeakerList) =>
+      currSpeakerList.map((currSpeaker) =>
+        currSpeaker?.id === selectedSpeaker?.id
+          ? {
+              ...currSpeaker,
+              from: speachData.from,
+              to: speachData.to,
+              description: speachData.description
+                ? String(speachData.description)
+                : String(currSpeaker.description),
+            }
+          : currSpeaker
+      )
     );
   }
 
@@ -62,6 +84,8 @@ export default function App() {
             listOfSpeakers={speakerList}
             onSelectClicked={handleSelectButton}
             selectedSpeaker={selectedSpeaker}
+            selectedDescriptionSpeaker={selectedDescriptionSpeaker}
+            setSelectedDescriptionSpeaker={setSelectedDescriptionSpeaker}
           />
 
           {addSpeakerVisible && (
@@ -72,7 +96,9 @@ export default function App() {
             {addSpeakerVisible ? "Close" : "Add Speaker"}
           </Button>
         </div>
-        {selectedSpeaker && <DefineSpeakerHours />}
+        {selectedSpeaker && (
+          <DefineSpeachData onSpeachDataSubmit={handleFormSpeachData} />
+        )}
       </div>
     </>
   );
@@ -94,7 +120,13 @@ function Header() {
   );
 }
 
-function SpeakersList({ listOfSpeakers, onSelectClicked, selectedSpeaker }) {
+function SpeakersList({
+  listOfSpeakers,
+  onSelectClicked,
+  selectedSpeaker,
+  selectedDescriptionSpeaker,
+  setSelectedDescriptionSpeaker,
+}) {
   const speakersList = listOfSpeakers;
 
   return (
@@ -105,19 +137,29 @@ function SpeakersList({ listOfSpeakers, onSelectClicked, selectedSpeaker }) {
           onSelectClicked={onSelectClicked}
           selectedSpeaker={selectedSpeaker}
           key={speaker.id}
+          selectedDescriptionSpeaker={selectedDescriptionSpeaker}
+          setSelectedDescriptionSpeaker={setSelectedDescriptionSpeaker}
         />
       ))}
     </ul>
   );
 }
 
-function Speaker({ speaker, onSelectClicked, selectedSpeaker }) {
-  const [visibleDiscription, setVisibleDescription] = useState(false);
+function Speaker({
+  speaker,
+  onSelectClicked,
+  selectedSpeaker,
+  selectedDescriptionSpeaker,
+  setSelectedDescriptionSpeaker,
+}) {
+  const visibleDiscription = selectedDescriptionSpeaker?.id === speaker?.id;
   const isSameSpeaker = selectedSpeaker?.id === speaker.id;
 
   function handleListElementClick(e) {
     if (e.target.tagName !== "BUTTON") {
-      setVisibleDescription((isVisible) => !isVisible);
+      setSelectedDescriptionSpeaker((currSpeaker) =>
+        currSpeaker?.id !== speaker.id ? speaker : null
+      );
     }
   }
 
@@ -129,7 +171,7 @@ function Speaker({ speaker, onSelectClicked, selectedSpeaker }) {
       <img src={speaker.image} alt={speaker.name} />
       <h3>{speaker.name}</h3>
       <p>
-        {speaker.topic} {visibleDiscription ? "⬆️" : "⬇️"}
+        {visibleDiscription ? "⬆️" : "⬇️"} {speaker.topic}
       </p>
       <span>{speaker.from ? `${speaker.from}:00 - ${speaker.to}:00` : ""}</span>
       <Button onClick={() => onSelectClicked(speaker)}>
@@ -163,6 +205,10 @@ function AddSpeakerForm({ onSpeakerAdd }) {
     };
 
     onSpeakerAdd(newSpeaker);
+
+    setName("");
+    setImage("https://i.pravatar.cc/48");
+    setTopic("");
   }
 
   return (
@@ -193,15 +239,59 @@ function AddSpeakerForm({ onSpeakerAdd }) {
   );
 }
 
-function DefineSpeakerHours() {
+function DefineSpeachData({ onSpeachDataSubmit }) {
+  const [start, setStart] = useState("");
+  const [finish, setFinish] = useState("");
+  const [description, setDescription] = useState("");
+
+  function handleFormSpeachData(e) {
+    e.preventDefault();
+
+    if (!start || !finish) return;
+
+    const speachData = {
+      from: start,
+      to: finish,
+      description: description,
+    };
+
+    onSpeachDataSubmit(speachData);
+    setStart("");
+    setFinish("");
+    setDescription("");
+  }
+
   return (
-    <form className="form-define-hours">
-      <h2>Select hours</h2>
+    <form
+      className="form-define-hours"
+      onSubmit={(e) => handleFormSpeachData(e)}
+    >
+      <h2>Set your speach data</h2>
       <label>🕛 Start hour </label>
-      <input type="text"></input>
+      <input
+        type="text"
+        value={start}
+        onChange={(e) => setStart(e.target.value)}
+      ></input>
 
       <label>🕧 Finish hour </label>
-      <input type="text"></input>
+      <input
+        type="text"
+        value={finish}
+        onChange={(e) => setFinish(e.target.value)}
+      ></input>
+
+      <label>💬 Description </label>
+      <textarea
+        id="description"
+        name="description"
+        rows="4"
+        cols="50"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+      ></textarea>
+
+      <Button>Set Data</Button>
     </form>
   );
 }
